@@ -5,10 +5,10 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends maven \
     && rm -rf /var/lib/apt/lists/*
 
-COPY backend/pom.xml .
+COPY pom.xml .
 RUN mvn -B -q dependency:go-offline
 
-COPY backend/src ./src
+COPY src ./src
 RUN mvn -B -DskipTests clean package
 
 FROM eclipse-temurin:21-jre-jammy AS runtime
