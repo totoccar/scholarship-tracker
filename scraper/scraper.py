@@ -10,9 +10,10 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 API_URL = os.getenv("API_URL")
-REQUEST_TIMEOUT_SECONDS = int(os.getenv("REQUEST_TIMEOUT_SECONDS", "90"))
-BACKEND_WAIT_SECONDS = int(os.getenv("BACKEND_WAIT_SECONDS", "20"))
-BACKEND_MAX_WAIT_SECONDS = int(os.getenv("BACKEND_MAX_WAIT_SECONDS", "300"))
+REQUEST_TIMEOUT_SECONDS = 40
+BACKEND_WAIT_SECONDS = 120
+BACKEND_MAX_WAIT_SECONDS =  300
+MAX_RETRIES = 5
 
 
 def resolve_api_url(raw_url):
