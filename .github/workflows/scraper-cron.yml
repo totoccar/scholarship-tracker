@@ -26,4 +26,7 @@ jobs:
         env:
           # Usamos la URL pública que te dio Render para tu API
           API_URL: ${{ secrets.API_URL }} 
+          REQUEST_TIMEOUT_SECONDS: '30'
+          BACKEND_WAIT_SECONDS: '10'
+          BACKEND_MAX_WAIT_SECONDS: '300'
         run: python scraper/scraper.py
