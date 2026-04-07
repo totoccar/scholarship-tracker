@@ -2,20 +2,25 @@ spring:
   application:
     name: scholarship-tracker-backend
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/scholarship_db}
-    username: ${SPRING_DATASOURCE_USERNAME:scholarship_user}
-    password: ${SPRING_DATASOURCE_PASSWORD:scholarship_pass}
+    url: ${DATABASE_URL:${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/scholarship_db}}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 5
+      connection-timeout: 20000
+      idle-timeout: 300000
   jpa:
     hibernate:
       ddl-auto: update
     database-platform: org.hibernate.dialect.PostgreSQLDialect
-    properties:              
-      hibernate:             
+    properties:
+      hibernate:
         format_sql: true
         jdbc:
           lob:
             non_contextual_creation: true
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
     open-in-view: false
 
 server:
