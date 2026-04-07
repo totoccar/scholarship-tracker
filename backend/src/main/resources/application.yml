@@ -2,7 +2,7 @@ spring:
   application:
     name: scholarship-tracker-backend
   datasource:
-    url: ${SPRING_DATASOURCE_URL:${DATABASE_URL:jdbc:postgresql://${SPRING_DATASOURCE_HOST:localhost}:${SPRING_DATASOURCE_PORT:5432}/${SPRING_DATASOURCE_DATABASE:scholarship_db}}}
+    url: ${JDBC_DATABASE_URL:${SPRING_DATASOURCE_URL:${DATABASE_URL:jdbc:postgresql://${SPRING_DATASOURCE_HOST:localhost}:${SPRING_DATASOURCE_PORT:5432}/${SPRING_DATASOURCE_DATABASE:scholarship_db}}}}
     username: ${SPRING_DATASOURCE_USERNAME:scholarship_user}
     password: ${SPRING_DATASOURCE_PASSWORD:scholarship_pass}
     driver-class-name: org.postgresql.Driver
@@ -10,10 +10,12 @@ spring:
       maximum-pool-size: 5
       connection-timeout: 20000
       idle-timeout: 300000
+      data-source-properties:
+        channelBinding: disable
+        sslmode: require
   jpa:
     hibernate:
       ddl-auto: update
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
     properties:
       hibernate:
         format_sql: true
