@@ -8,15 +8,29 @@ import sys
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-API_URL = os.getenv("API_URL") 
+API_URL = os.getenv("API_URL")
 REQUEST_TIMEOUT_SECONDS = 30 # Aumentamos el timeout por si Render está despertando
 
+
+def resolve_api_url(raw_url):
+    if not raw_url:
+        return None
+
+    normalized = raw_url.strip().rstrip("/")
+    if normalized.endswith("/api/v1/scholarships"):
+        return normalized
+
+    # Permite configurar API_URL como dominio base en secrets.
+    return f"{normalized}/api/v1/scholarships"
+
 def run_scraper():
-    if not API_URL:
+    final_api_url = resolve_api_url(API_URL)
+
+    if not final_api_url:
         logger.error("La variable de entorno API_URL no está configurada.")
         sys.exit(1)
 
-    logger.info(f"Iniciando ciclo de scraping hacia: {API_URL}")
+    logger.info(f"Iniciando ciclo de scraping hacia: {final_api_url}")
     
     # --- AGREGAR LÓGICA REAL DE BEAUTIFULSOUP ---
     # Ejemplo con tus mock_data
@@ -31,12 +45,17 @@ def run_scraper():
 
     try:
         # Si Render está dormido, esta petición tardará unos 20-30 segs en despertar el servicio.
-        response = requests.post(API_URL, json=mock_data, timeout=REQUEST_TIMEOUT_SECONDS)
+        response = requests.post(final_api_url, json=mock_data, timeout=REQUEST_TIMEOUT_SECONDS)
         
         if response.status_code in [200, 201]:
             logger.info(f"✅ Beca enviada con éxito: {mock_data['title']}")
         elif response.status_code == 409: # Suponiendo que manejas duplicados
             logger.warning(f"⚠️ La beca ya existe en la base de datos.")
+        elif response.status_code == 404:
+            logger.error(
+                "❌ Error 404. Verifica que API_URL apunte al backend correcto. URL usada: %s",
+                final_api_url,
+            )
         else:
             logger.error(f"❌ Error al enviar: {response.status_code} - {response.text}")
             
