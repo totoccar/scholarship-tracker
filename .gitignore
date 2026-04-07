@@ -1,0 +1,28 @@
+# General
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Java / Maven
+**/target/
+**/out/
+**/.mvn/wrapper/maven-wrapper.jar
+*.log
+
+# Spring Boot
+**/spring.log
+
+# Environment and secrets
+.env
+.env.*
+*.pem
+*.key
+*.crt
+
+# Docker
+**/.docker/
+**/docker-data/

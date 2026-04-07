@@ -1,0 +1,51 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: scholarship_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: scholarship_db
+      POSTGRES_USER: scholarship_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - scholarship_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U scholarship_user -d scholarship_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: scholarship_app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/scholarship_db
+      SPRING_DATASOURCE_USERNAME: scholarship_user
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+      SERVER_PORT: 8080
+    ports:
+      - "8080:8080"
+
+  scraper:
+    build:
+      context: ./scraper
+      dockerfile: Dockerfile
+    container_name: scholarship_scraper
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_started
+    environment:
+      API_URL: http://app:8080/api/v1/scholarships
+      SCRAPER_INTERVAL_SECONDS: 900
+
+volumes:
+  scholarship_postgres_data:
