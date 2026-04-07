@@ -46,6 +46,20 @@ services:
     environment:
       API_URL: http://app:8080/api/v1/scholarships
       SCRAPER_INTERVAL_SECONDS: 900
+      BACKEND_WAIT_SECONDS: 5
+      REQUEST_TIMEOUT_SECONDS: 10
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: scholarship_frontend
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_started
+    ports:
+      - "8081:80"
 
 volumes:
   scholarship_postgres_data:

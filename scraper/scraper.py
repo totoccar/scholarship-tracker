@@ -1,22 +1,25 @@
 import requests
 from bs4 import BeautifulSoup
-import time
 import logging
 import os
+import sys
 
 # Configuración de logs
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# URL de la API de Spring Boot dentro de la red de Docker
-API_URL = os.getenv("API_URL", "http://app:8080/api/v1/scholarships")
-SCRAPER_INTERVAL_SECONDS = int(os.getenv("SCRAPER_INTERVAL_SECONDS", "900"))
+API_URL = os.getenv("API_URL") 
+REQUEST_TIMEOUT_SECONDS = 30 # Aumentamos el timeout por si Render está despertando
 
 def run_scraper():
-    logger.info("Iniciando ciclo de scraping...")
+    if not API_URL:
+        logger.error("La variable de entorno API_URL no está configurada.")
+        sys.exit(1)
+
+    logger.info(f"Iniciando ciclo de scraping hacia: {API_URL}")
     
-    # Ejemplo: Simulamos que extraemos datos de una web
-    # Aquí iría tu lógica de BeautifulSoup
+    # --- AGREGAR LÓGICA REAL DE BEAUTIFULSOUP ---
+    # Ejemplo con tus mock_data
     mock_data = {
         "title": "Beca de Excelencia Python Cloud",
         "description": "Beca para especialistas en automatización.",
@@ -27,16 +30,20 @@ def run_scraper():
     }
 
     try:
-        response = requests.post(API_URL, json=mock_data)
-        if response.status_code == 201:
-            logger.info(f"Beca enviada con éxito: {mock_data['title']}")
+        # Si Render está dormido, esta petición tardará unos 20-30 segs en despertar el servicio.
+        response = requests.post(API_URL, json=mock_data, timeout=REQUEST_TIMEOUT_SECONDS)
+        
+        if response.status_code in [200, 201]:
+            logger.info(f"✅ Beca enviada con éxito: {mock_data['title']}")
+        elif response.status_code == 409: # Suponiendo que manejas duplicados
+            logger.warning(f"⚠️ La beca ya existe en la base de datos.")
         else:
-            logger.error(f"Error al enviar beca: {response.status_code} - {response.text}")
-    except Exception as e:
-        logger.error(f"No se pudo conectar con el backend: {e}")
+            logger.error(f"❌ Error al enviar: {response.status_code} - {response.text}")
+            
+    except requests.exceptions.Timeout:
+        logger.error("❌ Error: El backend tardó demasiado en despertar (Timeout).")
+    except requests.RequestException as e:
+        logger.error(f"❌ Error de conexión: {e}")
 
 if __name__ == "__main__":
-    logger.info("Scraper listo. Intervalo: %s segundos", SCRAPER_INTERVAL_SECONDS)
-    while True:
-        run_scraper()
-        time.sleep(SCRAPER_INTERVAL_SECONDS)
+    run_scraper()
