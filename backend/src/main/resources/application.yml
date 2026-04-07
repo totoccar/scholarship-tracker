@@ -9,9 +9,13 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
-    properties:
-      hibernate:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    properties:              
+      hibernate:             
         format_sql: true
+        jdbc:
+          lob:
+            non_contextual_creation: true
     open-in-view: false
 
 server:
