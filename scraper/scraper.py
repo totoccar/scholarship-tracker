@@ -3,13 +3,16 @@ from bs4 import BeautifulSoup
 import logging
 import os
 import sys
+import time
 
 # Configuración de logs
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 API_URL = os.getenv("API_URL")
-REQUEST_TIMEOUT_SECONDS = 30 # Aumentamos el timeout por si Render está despertando
+REQUEST_TIMEOUT_SECONDS = int(os.getenv("REQUEST_TIMEOUT_SECONDS", "30"))
+BACKEND_WAIT_SECONDS = int(os.getenv("BACKEND_WAIT_SECONDS", "10"))
+BACKEND_MAX_WAIT_SECONDS = int(os.getenv("BACKEND_MAX_WAIT_SECONDS", "300"))
 
 
 def resolve_api_url(raw_url):
@@ -23,6 +26,31 @@ def resolve_api_url(raw_url):
     # Permite configurar API_URL como dominio base en secrets.
     return f"{normalized}/api/v1/scholarships"
 
+
+def resolve_health_url(final_api_url):
+    return final_api_url.replace("/api/v1/scholarships", "/actuator/health")
+
+
+def wait_for_backend(final_api_url):
+    health_url = resolve_health_url(final_api_url)
+    elapsed_seconds = 0
+
+    while elapsed_seconds < BACKEND_MAX_WAIT_SECONDS:
+        try:
+            response = requests.get(health_url, timeout=REQUEST_TIMEOUT_SECONDS)
+            if response.ok:
+                logger.info("Backend listo en %s", health_url)
+                return True
+            logger.info("Backend aún no listo (%s). Respuesta: %s", health_url, response.status_code)
+        except requests.RequestException as exc:
+            logger.info("Esperando backend en %s: %s", health_url, exc)
+
+        time.sleep(BACKEND_WAIT_SECONDS)
+        elapsed_seconds += BACKEND_WAIT_SECONDS
+
+    logger.error("❌ El backend no respondió en %s segundos.", BACKEND_MAX_WAIT_SECONDS)
+    return False
+
 def run_scraper():
     final_api_url = resolve_api_url(API_URL)
 
@@ -31,6 +59,9 @@ def run_scraper():
         sys.exit(1)
 
     logger.info(f"Iniciando ciclo de scraping hacia: {final_api_url}")
+
+    if not wait_for_backend(final_api_url):
+        sys.exit(1)
     
     # --- AGREGAR LÓGICA REAL DE BEAUTIFULSOUP ---
     # Ejemplo con tus mock_data
@@ -44,7 +75,6 @@ def run_scraper():
     }
 
     try:
-        # Si Render está dormido, esta petición tardará unos 20-30 segs en despertar el servicio.
         response = requests.post(final_api_url, json=mock_data, timeout=REQUEST_TIMEOUT_SECONDS)
         
         if response.status_code in [200, 201]:
