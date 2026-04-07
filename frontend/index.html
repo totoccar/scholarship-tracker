@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Scholarship Tracker UI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-light">
+    <div class="container mt-5">
+        <h1>🎓 Buscador de Becas</h1>
+        <hr>
+        <div id="scholarship-list" class="row">
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8080/api/v1/scholarships';
+
+        async function loadScholarships() {
+            const container = document.getElementById('scholarship-list');
+            try {
+                const response = await fetch(API_URL);
+                if (!response.ok) {
+                    throw new Error(`Error HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                container.innerHTML = data.map(s => `
+                    <div class="col-md-4 mb-4">
+                        <div class="card h-100 shadow-sm">
+                            <div class="card-body">
+                                <h5 class="card-title">${s.title}</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">${s.provider}</h6>
+                                <p class="card-text text-truncate">${s.description}</p>
+                                <div class="mb-2">
+                                    ${s.tags.map(t => `<span class="badge bg-primary mr-1">${t}</span>`).join(' ')}
+                                </div>
+                                <a href="${s.url}" target="_blank" class="btn btn-outline-primary btn-sm mt-auto">Ver Beca</a>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                container.innerHTML = `<div class="col-12"><div class="alert alert-danger">No se pudieron cargar becas: ${error.message}</div></div>`;
+            }
+        }
+        loadScholarships();
+    </script>
+</body>
+
+</html>
