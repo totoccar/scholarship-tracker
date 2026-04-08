@@ -217,7 +217,7 @@ def run_scraper() -> None:
             scraped = scraper.scrape()
             logger.info("%s: items validos extraidos: %s", scraper.site_name, len(scraped))
             scholarships.extend(scraped)
-        except (requests.RequestException, ValueError) as exc:
+        except (requests.RequestException, ValueError, OSError) as exc:
             logger.error("%s: no se pudo ejecutar el scraper: %s", scraper.site_name, exc)
 
     scholarships = deduplicate_scholarships(scholarships)
