@@ -56,6 +56,11 @@ public class Scholarship {
     @Column(nullable = false, length = 150)
     private String provider;
 
+    @Size(max = 100)
+    @Column(length = 100)
+    @Builder.Default
+    private String country = "Global";
+
     @NotNull
     @FutureOrPresent
     @Column(nullable = false)

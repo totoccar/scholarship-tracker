@@ -1,11 +1,14 @@
 package com.scholarshiptracker.backend.service;
 
 import com.scholarshiptracker.backend.domain.entity.Scholarship;
+import org.springframework.data.domain.Page;
 import java.util.List;
 
 public interface ScholarshipService {
 
     List<Scholarship> findAll();
+
+    Page<Scholarship> searchByCountry(String country, int page, int size);
 
     Scholarship findById(Long id);
 

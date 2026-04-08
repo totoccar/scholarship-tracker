@@ -12,13 +12,14 @@ spring:
       idle-timeout: 300000
       data-source-properties:
         channelBinding: disable
-        sslmode: require
+        sslmode: ${DB_SSL_MODE:disable}
   jpa:
+    show-sql: false
     hibernate:
       ddl-auto: update
     properties:
       hibernate:
-        format_sql: true
+        format_sql: false
         jdbc:
           lob:
             non_contextual_creation: true
@@ -29,3 +30,10 @@ spring:
 
 server:
   port: ${SERVER_PORT:8080}
+
+logging:
+  level:
+    root: INFO
+    org.hibernate.SQL: WARN
+    org.hibernate.orm.jdbc.bind: WARN
+    org.hibernate.type.descriptor.sql: WARN

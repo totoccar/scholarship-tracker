@@ -5,6 +5,10 @@ import com.scholarshiptracker.backend.repository.ScholarshipRepository;
 import com.scholarshiptracker.backend.service.ScholarshipService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -16,6 +20,15 @@ public class ScholarshipServiceImpl implements ScholarshipService {
     @Override
     public List<Scholarship> findAll() {
         return scholarshipRepository.findAll();
+    }
+
+    @Override
+    public Page<Scholarship> searchByCountry(String country, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("deadline").ascending());
+        if (country == null || country.isBlank()) {
+            return scholarshipRepository.findAll(pageable);
+        }
+        return scholarshipRepository.findByCountryContainingIgnoreCase(country.trim(), pageable);
     }
 
     @Override
@@ -33,6 +46,7 @@ public class ScholarshipServiceImpl implements ScholarshipService {
 
         scholarship.setId(null);
         scholarship.setUrl(normalizedUrl);
+        scholarship.setCountry(normalizeCountry(scholarship.getCountry()));
         return scholarshipRepository.save(scholarship);
     }
 
@@ -47,6 +61,7 @@ public class ScholarshipServiceImpl implements ScholarshipService {
         existing.setTitle(scholarship.getTitle());
         existing.setDescription(scholarship.getDescription());
         existing.setProvider(scholarship.getProvider());
+        existing.setCountry(normalizeCountry(scholarship.getCountry()));
         existing.setDeadline(scholarship.getDeadline());
         existing.setUrl(normalizedUrl);
         existing.setTags(scholarship.getTags());
@@ -64,5 +79,12 @@ public class ScholarshipServiceImpl implements ScholarshipService {
             return null;
         }
         return url.trim();
+    }
+
+    private String normalizeCountry(String country) {
+        if (country == null || country.isBlank()) {
+            return "Global";
+        }
+        return country.trim();
     }
 }

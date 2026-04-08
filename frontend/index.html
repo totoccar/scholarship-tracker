@@ -3,50 +3,450 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Scholarship Tracker UI</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buscador de Becas</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Source+Serif+4:opsz,wght@8..60,500;8..60,700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0f131a;
+            --bg-soft: #171d27;
+            --card: #1d2430;
+            --line: #2b3443;
+            --text: #f3f5f7;
+            --muted: #a9b3c0;
+            --accent: #ffc247;
+            --accent-strong: #ffad0f;
+            --danger: #ff6f75;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Space Grotesk', sans-serif;
+            color: var(--text);
+            background: radial-gradient(circle at 15% 10%, #2b3443 0%, var(--bg) 40%) no-repeat,
+                linear-gradient(160deg, #0f131a 0%, #111823 50%, #0f131a 100%);
+            min-height: 100vh;
+        }
+
+        .wrapper {
+            width: min(1120px, 92vw);
+            margin: 40px auto;
+            animation: fade-in 600ms ease-out;
+        }
+
+        .hero {
+            padding: 28px;
+            border: 1px solid var(--line);
+            border-radius: 20px;
+            background: linear-gradient(135deg, rgba(255, 194, 71, 0.15), rgba(255, 194, 71, 0.02) 38%), var(--bg-soft);
+            box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+        }
+
+        .kicker {
+            margin: 0;
+            color: var(--accent);
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        h1 {
+            margin: 8px 0 12px;
+            font-family: 'Source Serif 4', serif;
+            font-size: clamp(2rem, 5vw, 3rem);
+            line-height: 1.08;
+        }
+
+        .subtitle {
+            margin: 0;
+            color: var(--muted);
+            font-size: 1rem;
+            max-width: 68ch;
+        }
+
+        .search-panel {
+            margin-top: 20px;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 12px;
+        }
+
+        .search-panel input {
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: #111722;
+            color: var(--text);
+            padding: 14px 15px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 200ms ease, box-shadow 200ms ease;
+        }
+
+        .search-panel input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(255, 194, 71, 0.15);
+        }
+
+        .search-panel button {
+            background: linear-gradient(120deg, var(--accent), var(--accent-strong));
+            color: #111;
+            border: 0;
+            border-radius: 12px;
+            padding: 0 18px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .toolbar {
+            margin: 18px 2px 4px;
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+            color: var(--muted);
+            font-size: 0.95rem;
+        }
+
+        .grid {
+            margin-top: 16px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+            gap: 16px;
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            padding: 16px;
+            display: grid;
+            gap: 12px;
+            min-height: 230px;
+            transform: translateY(0);
+            transition: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(255, 194, 71, 0.45);
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.26);
+        }
+
+        .provider {
+            color: var(--accent);
+            font-size: 0.86rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin: 0;
+        }
+
+        .title {
+            margin: 0;
+            font-size: 1.12rem;
+            line-height: 1.3;
+        }
+
+        .meta {
+            margin: 0;
+            color: var(--muted);
+            font-size: 0.92rem;
+        }
+
+        .description {
+            margin: 0;
+            color: #d7dce3;
+            font-size: 0.94rem;
+            line-height: 1.5;
+        }
+
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .tag {
+            background: rgba(255, 194, 71, 0.14);
+            border: 1px solid rgba(255, 194, 71, 0.28);
+            color: #ffd37e;
+            border-radius: 999px;
+            padding: 4px 10px;
+            font-size: 0.8rem;
+        }
+
+        .cta {
+            margin-top: auto;
+        }
+
+        .cta a {
+            color: #111;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 0.9rem;
+            background: var(--accent);
+            border-radius: 10px;
+            padding: 8px 12px;
+            display: inline-block;
+        }
+
+        .pager {
+            margin-top: 18px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .pager button {
+            background: #1b2431;
+            border: 1px solid var(--line);
+            color: var(--text);
+            border-radius: 10px;
+            padding: 9px 14px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .pager button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .status {
+            margin-top: 14px;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.02);
+            padding: 14px;
+            color: var(--muted);
+        }
+
+        .status.error {
+            border-color: rgba(255, 111, 117, 0.5);
+            color: #ffb9bd;
+            background: rgba(255, 111, 117, 0.08);
+        }
+
+        @media (max-width: 720px) {
+            .wrapper {
+                margin: 18px auto 28px;
+            }
+
+            .hero {
+                padding: 18px;
+                border-radius: 14px;
+            }
+
+            .search-panel {
+                grid-template-columns: 1fr;
+            }
+
+            .search-panel button {
+                height: 42px;
+            }
+        }
+
+        @keyframes fade-in {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
 </head>
 
-<body class="bg-light">
-    <div class="container mt-5">
-        <h1>🎓 Buscador de Becas</h1>
-        <hr>
-        <div id="scholarship-list" class="row">
+<body>
+    <div class="wrapper">
+        <section class="hero">
+            <p class="kicker">Scholarship Tracker</p>
+            <h1>Buscador de Becas por Pais</h1>
+            <p class="subtitle">
+                Filtra oportunidades por pais y explora resultados paginados para encontrar becas relevantes sin perder
+                tiempo.
+            </p>
+
+            <form id="search-form" class="search-panel">
+                <input id="country-input" type="text" placeholder="Ejemplo: Argentina, Spain, USA" autocomplete="off">
+                <button type="submit">Buscar</button>
+            </form>
+
+            <div class="toolbar">
+                <span id="result-summary">Cargando becas...</span>
+                <span id="current-filter">Filtro: Todos los paises</span>
+            </div>
+        </section>
+
+        <section id="status" class="status" hidden></section>
+
+        <section id="scholarship-list" class="grid"></section>
+
+        <div class="pager">
+            <button id="prev-btn" type="button">Anterior</button>
+            <span id="page-indicator">Pagina 1</span>
+            <button id="next-btn" type="button">Siguiente</button>
         </div>
     </div>
 
     <script>
-        const API_URL = 'http://localhost:8080/api/v1/scholarships';
+        const API_BASE_URL = `${window.location.protocol}//${window.location.hostname}:8080/api/v1/scholarships/search`;
+        const PAGE_SIZE = 6;
+
+        const dom = {
+            form: document.getElementById('search-form'),
+            countryInput: document.getElementById('country-input'),
+            list: document.getElementById('scholarship-list'),
+            status: document.getElementById('status'),
+            summary: document.getElementById('result-summary'),
+            filter: document.getElementById('current-filter'),
+            prev: document.getElementById('prev-btn'),
+            next: document.getElementById('next-btn'),
+            pageIndicator: document.getElementById('page-indicator')
+        };
+
+        const state = {
+            country: '',
+            page: 0,
+            totalPages: 0,
+            totalElements: 0
+        };
+
+        function truncate(text, max = 140) {
+            if (!text) return '';
+            return text.length > max ? `${text.slice(0, max)}...` : text;
+        }
+
+        function showStatus(message, isError = false) {
+            dom.status.hidden = false;
+            dom.status.textContent = message;
+            dom.status.className = isError ? 'status error' : 'status';
+        }
+
+        function hideStatus() {
+            dom.status.hidden = true;
+            dom.status.textContent = '';
+            dom.status.className = 'status';
+        }
+
+        function renderCards(items) {
+            if (!items.length) {
+                dom.list.innerHTML = '';
+                showStatus('No encontramos becas para este filtro. Prueba con otro pais.');
+                return;
+            }
+
+            hideStatus();
+            dom.list.innerHTML = items.map((s) => {
+                const tags = (s.tags || []).map((tag) => `<span class="tag">${tag}</span>`).join('');
+                return `
+                    <article class="card">
+                        <p class="provider">${s.provider || 'Proveedor'}</p>
+                        <h3 class="title">${s.title || 'Sin titulo'}</h3>
+                        <p class="meta">Pais: ${s.country || 'Global'} | Cierre: ${s.deadline || 'N/D'}</p>
+                        <p class="description">${truncate(s.description, 160)}</p>
+                        <div class="tags">${tags}</div>
+                        <div class="cta">
+                            <a href="${s.url}" target="_blank" rel="noopener noreferrer">Ver convocatoria</a>
+                        </div>
+                    </article>
+                `;
+            }).join('');
+        }
+
+        function updatePaginationUI() {
+            const page = state.page + 1;
+            const totalPages = state.totalPages || 1;
+            dom.pageIndicator.textContent = `Pagina ${page} de ${totalPages}`;
+            dom.prev.disabled = state.page <= 0;
+            dom.next.disabled = state.page >= totalPages - 1;
+        }
+
+        function updateMetaUI() {
+            dom.summary.textContent = `${state.totalElements} resultado(s) encontrados`;
+            dom.filter.textContent = `Filtro: ${state.country ? state.country : 'Todos los paises'}`;
+        }
+
+        async function fetchWithRetry(url, attempts = 3, delayMs = 450) {
+            let lastError;
+            for (let i = 0; i < attempts; i += 1) {
+                try {
+                    return await fetch(url);
+                } catch (error) {
+                    lastError = error;
+                    if (i < attempts - 1) {
+                        await new Promise((resolve) => setTimeout(resolve, delayMs));
+                    }
+                }
+            }
+            throw lastError;
+        }
 
         async function loadScholarships() {
-            const container = document.getElementById('scholarship-list');
+            const params = new URLSearchParams({
+                page: String(state.page),
+                size: String(PAGE_SIZE)
+            });
+
+            if (state.country) {
+                params.set('country', state.country);
+            }
+
+            showStatus('Buscando becas...');
             try {
-                const response = await fetch(API_URL);
+                const response = await fetchWithRetry(`${API_BASE_URL}?${params.toString()}`);
                 if (!response.ok) {
                     throw new Error(`Error HTTP ${response.status}`);
                 }
 
                 const data = await response.json();
+                state.totalPages = data.totalPages || 0;
+                state.totalElements = data.totalElements || 0;
 
-                container.innerHTML = data.map(s => `
-                    <div class="col-md-4 mb-4">
-                        <div class="card h-100 shadow-sm">
-                            <div class="card-body">
-                                <h5 class="card-title">${s.title}</h5>
-                                <h6 class="card-subtitle mb-2 text-muted">${s.provider}</h6>
-                                <p class="card-text text-truncate">${s.description}</p>
-                                <div class="mb-2">
-                                    ${s.tags.map(t => `<span class="badge bg-primary mr-1">${t}</span>`).join(' ')}
-                                </div>
-                                <a href="${s.url}" target="_blank" class="btn btn-outline-primary btn-sm mt-auto">Ver Beca</a>
-                            </div>
-                        </div>
-                    </div>
-                `).join('');
+                renderCards(data.content || []);
+                updateMetaUI();
+                updatePaginationUI();
             } catch (error) {
-                container.innerHTML = `<div class="col-12"><div class="alert alert-danger">No se pudieron cargar becas: ${error.message}</div></div>`;
+                dom.list.innerHTML = '';
+                showStatus(`No se pudieron cargar becas: ${error.message}`, true);
+                state.totalPages = 0;
+                state.totalElements = 0;
+                updateMetaUI();
+                updatePaginationUI();
             }
         }
+
+        dom.form.addEventListener('submit', (event) => {
+            event.preventDefault();
+            state.country = dom.countryInput.value.trim();
+            state.page = 0;
+            loadScholarships();
+        });
+
+        dom.prev.addEventListener('click', () => {
+            if (state.page <= 0) return;
+            state.page -= 1;
+            loadScholarships();
+        });
+
+        dom.next.addEventListener('click', () => {
+            if (state.page >= state.totalPages - 1) return;
+            state.page += 1;
+            loadScholarships();
+        });
+
         loadScholarships();
     </script>
 </body>
