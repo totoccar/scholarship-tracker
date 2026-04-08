@@ -6,6 +6,48 @@ const API_BASE_URL = (
 ).replace(/\/$/, '');
 const PAGE_SIZE = 6;
 
+const ACADEMIC_LEVELS = {
+    all: 'Todos los niveles',
+    postgraduate: 'Posgrados',
+    masters: 'Masters',
+};
+
+function matchesAcademicLevel(item, academicLevel) {
+    if (academicLevel === 'all') return true;
+
+    const haystack = [
+        item.title,
+        item.description,
+        ...(item.tags || []),
+    ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+
+    const postgraduateKeywords = [
+        'posgrado',
+        'postgrado',
+        'postgraduate',
+        'graduate',
+        'maestria',
+        'master',
+        'msc',
+        'mba',
+    ];
+
+    const mastersKeywords = ['master', 'masters', 'maestria', 'msc', 'mba'];
+
+    if (academicLevel === 'postgraduate') {
+        return postgraduateKeywords.some((keyword) => haystack.includes(keyword));
+    }
+
+    if (academicLevel === 'masters') {
+        return mastersKeywords.some((keyword) => haystack.includes(keyword));
+    }
+
+    return true;
+}
+
 function truncate(text, max = 140) {
     if (!text) return '';
     return text.length > max ? `${text.slice(0, max)}...` : text;
@@ -30,6 +72,7 @@ export default function App() {
     const [allItems, setAllItems] = useState([]);
     const [country, setCountry] = useState('');
     const [keyword, setKeyword] = useState('');
+    const [academicLevel, setAcademicLevel] = useState('all');
     const [page, setPage] = useState(0);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -45,9 +88,14 @@ export default function App() {
         const normalizedKeyword = keyword.trim().toLowerCase();
 
         return allItems.filter((item) => {
+            const status = (item.status || 'APPROVED').toUpperCase();
+            if (status !== 'APPROVED') return false;
+
             const itemCountry = item.country || 'Global';
             const matchesCountry = country ? itemCountry.toLowerCase() === country.toLowerCase() : true;
             if (!matchesCountry) return false;
+
+            if (!matchesAcademicLevel(item, academicLevel)) return false;
 
             if (!normalizedKeyword) return true;
 
@@ -64,7 +112,7 @@ export default function App() {
 
             return haystack.includes(normalizedKeyword);
         });
-    }, [allItems, country, keyword]);
+    }, [allItems, country, keyword, academicLevel]);
 
     const totalElements = filteredItems.length;
     const totalPages = Math.max(1, Math.ceil(totalElements / PAGE_SIZE));
@@ -105,13 +153,38 @@ export default function App() {
 
     useEffect(() => {
         setPage(0);
-    }, [country, keyword]);
+    }, [country, keyword, academicLevel]);
 
     const onResetFilters = () => {
         setCountry('');
         setKeyword('');
+        setAcademicLevel('all');
         setPage(0);
     };
+
+    const activeFilters = [
+        keyword.trim()
+            ? {
+                key: 'keyword',
+                label: `Keyword: ${keyword.trim()}`,
+                clear: () => setKeyword(''),
+            }
+            : null,
+        country
+            ? {
+                key: 'country',
+                label: `Pais: ${country}`,
+                clear: () => setCountry(''),
+            }
+            : null,
+        academicLevel !== 'all'
+            ? {
+                key: 'academicLevel',
+                label: `Nivel: ${ACADEMIC_LEVELS[academicLevel]}`,
+                clear: () => setAcademicLevel('all'),
+            }
+            : null,
+    ].filter(Boolean);
 
     const onPrev = () => {
         if (page <= 0) return;
@@ -150,14 +223,34 @@ export default function App() {
                             </option>
                         ))}
                     </select>
+
+                    <select value={academicLevel} onChange={(e) => setAcademicLevel(e.target.value)}>
+                        <option value="all">Todos los niveles</option>
+                        <option value="postgraduate">Posgrados</option>
+                        <option value="masters">Masters</option>
+                    </select>
+
                     <button type="button" onClick={onResetFilters}>
                         Limpiar filtros
                     </button>
                 </div>
 
+                {activeFilters.length > 0 && (
+                    <div className="active-filters">
+                        {activeFilters.map((filter) => (
+                            <span className="filter-chip" key={filter.key}>
+                                {filter.label}
+                                <button type="button" aria-label={`Quitar ${filter.label}`} onClick={filter.clear}>
+                                    ×
+                                </button>
+                            </span>
+                        ))}
+                    </div>
+                )}
+
                 <div className="toolbar">
                     <span>{loading ? 'Buscando becas...' : `${totalElements} resultado(s) encontrados`}</span>
-                    <span>{`Filtro pais: ${country || 'Todos'} | Keyword: ${keyword.trim() || 'Ninguna'}`}</span>
+                    <span>{`Pais: ${country || 'Todos'} | Keyword: ${keyword.trim() || 'Ninguna'} | Nivel: ${ACADEMIC_LEVELS[academicLevel]}`}</span>
                 </div>
             </section>
 
@@ -167,9 +260,20 @@ export default function App() {
             <section className="grid">
                 {pagedItems.map((scholarship) => (
                     <article className="card" key={scholarship.id ?? scholarship.url}>
+                        {scholarship.logoUrl && (
+                            <img
+                                src={scholarship.logoUrl}
+                                alt={`Logo de ${scholarship.provider || 'proveedor'}`}
+                                width="36"
+                                height="36"
+                                style={{ borderRadius: '8px', objectFit: 'contain', marginBottom: '8px' }}
+                                loading="lazy"
+                            />
+                        )}
                         <p className="provider">{scholarship.provider || 'Proveedor'}</p>
                         <h3 className="title">{scholarship.title || 'Sin titulo'}</h3>
                         <p className="meta">Pais: {scholarship.country || 'Global'} | Cierre: {scholarship.deadline || 'N/D'}</p>
+                        {scholarship.benefits && <p className="meta">Beneficios: {truncate(scholarship.benefits, 80)}</p>}
                         <p className="description">{truncate(scholarship.description, 160)}</p>
                         <div className="tags">
                             {(scholarship.tags || []).map((tag) => (

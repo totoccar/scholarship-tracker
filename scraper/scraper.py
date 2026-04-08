@@ -21,10 +21,95 @@ SCRAPER_SOURCE_NAME = os.getenv("SCRAPER_SOURCE_NAME", "Fuente externa")
 SCRAPER_DEFAULT_COUNTRY = os.getenv("SCRAPER_DEFAULT_COUNTRY", "Global")
 SCRAPER_SITES_JSON = os.getenv("SCRAPER_SITES_JSON", "")
 SCRAPER_LINK_BASE_URL = os.getenv("SCRAPER_LINK_BASE_URL", "")
+SCRAPER_INCLUDE_KEYWORDS = os.getenv("SCRAPER_INCLUDE_KEYWORDS", "")
+SCRAPER_EXCLUDE_KEYWORDS = os.getenv("SCRAPER_EXCLUDE_KEYWORDS", "")
+SCRAPER_WHITE_LIST = os.getenv("SCRAPER_WHITE_LIST", "")
+SCRAPER_BLACK_LIST = os.getenv("SCRAPER_BLACK_LIST", "")
 
 REQUEST_TIMEOUT_SECONDS = int(os.getenv("REQUEST_TIMEOUT_SECONDS", "40"))
 BACKEND_WAIT_SECONDS = int(os.getenv("BACKEND_WAIT_SECONDS", "20"))
 BACKEND_MAX_WAIT_SECONDS = int(os.getenv("BACKEND_MAX_WAIT_SECONDS", "300"))
+
+DEFAULT_INCLUDE_KEYWORDS = [
+    "it",
+    "informatica",
+    "informática",
+    "sistemas",
+    "software",
+    "computer science",
+    "computing",
+    "ingenieria informatica",
+    "ingeniería informática",
+    "data science",
+    "ciencia de datos",
+    "machine learning",
+    "inteligencia artificial",
+    "ia",
+    "cloud",
+    "devops",
+    "ciberseguridad",
+    "cybersecurity",
+    "hpc",
+    "high performance computing",
+    "supercomput",
+    "masters",
+    "master",
+    "maestria",
+    "maestría",
+    "postgrado",
+    "posgrado",
+]
+
+DEFAULT_EXCLUDE_KEYWORDS = [
+    "abogacia",
+    "abogacía",
+    "derecho",
+    "medicina",
+    "enfermeria",
+    "enfermería",
+    "odontologia",
+    "odontología",
+    "farmacia",
+    "psicologia",
+    "psicología",
+    "nutricion",
+    "nutrición",
+    "veterinaria",
+]
+
+DEFAULT_WHITE_LIST = [
+    "beca",
+    "convocatoria",
+    "master",
+    "máster",
+    "postgrado",
+    "pasantia",
+    "pasantía",
+    "internship",
+]
+
+DEFAULT_BLACK_LIST = [
+    "tramites",
+    "trámites",
+    "preguntas frecuentes",
+    "guia",
+    "guía",
+    "requisitos",
+    "contacto",
+    "noticia",
+]
+
+
+def parse_keywords(raw_value: str, defaults: list[str]) -> list[str]:
+    if not raw_value.strip():
+        return defaults
+    return [token.strip().lower() for token in raw_value.split(",") if token.strip()]
+
+
+INCLUDE_KEYWORDS = parse_keywords(SCRAPER_INCLUDE_KEYWORDS, DEFAULT_INCLUDE_KEYWORDS)
+EXCLUDE_KEYWORDS = parse_keywords(SCRAPER_EXCLUDE_KEYWORDS, DEFAULT_EXCLUDE_KEYWORDS)
+WHITE_LIST = parse_keywords(SCRAPER_WHITE_LIST, DEFAULT_WHITE_LIST)
+BLACK_LIST = parse_keywords(SCRAPER_BLACK_LIST, DEFAULT_BLACK_LIST)
 
 
 @dataclass(frozen=True)
@@ -35,6 +120,7 @@ class ScraperSpec:
     source_name: str | None = None
     default_country: str = "Global"
     link_base_url: str | None = None
+    selector_overrides: dict[str, str] | None = None
 
 
 def resolve_api_url(raw_url: str | None) -> str | None:
@@ -101,6 +187,19 @@ def parse_site_specs() -> list[ScraperSpec]:
             source_name = item.get("source_name")
             default_country = str(item.get("default_country") or "Global").strip() or "Global"
             link_base_url = item.get("link_base_url")
+            selectors = item.get("selectors") if isinstance(item.get("selectors"), dict) else {}
+            selector_overrides: dict[str, str] = {}
+
+            for key in ("item", "title", "description", "provider", "country", "deadline", "tags", "link"):
+                value = selectors.get(key) if isinstance(selectors, dict) else None
+                if value:
+                    selector_overrides[key] = str(value).strip()
+
+            for key in ("item", "title", "description", "provider", "country", "deadline", "tags", "link"):
+                raw_key = f"selector_{key}"
+                value = item.get(raw_key)
+                if value:
+                    selector_overrides[key] = str(value).strip()
 
             specs.append(
                 ScraperSpec(
@@ -110,6 +209,7 @@ def parse_site_specs() -> list[ScraperSpec]:
                     source_name=str(source_name).strip() if source_name else None,
                     default_country=default_country,
                     link_base_url=str(link_base_url).strip() if link_base_url else None,
+                    selector_overrides=selector_overrides or None,
                 )
             )
 
@@ -125,6 +225,7 @@ def parse_site_specs() -> list[ScraperSpec]:
                 source_name=SCRAPER_SOURCE_NAME,
                 default_country=SCRAPER_DEFAULT_COUNTRY,
                 link_base_url=SCRAPER_LINK_BASE_URL.strip() or None,
+                selector_overrides=None,
             )
         )
 
@@ -157,6 +258,7 @@ def build_scrapers() -> list[BaseScraper]:
                 default_country=spec.default_country,
                 request_timeout_seconds=REQUEST_TIMEOUT_SECONDS,
                 link_base_url=spec.link_base_url,
+                selector_overrides=spec.selector_overrides,
             )
         )
 
@@ -173,6 +275,79 @@ def deduplicate_scholarships(scholarships: list[ScholarshipPayload]) -> list[Sch
         seen_urls.add(url)
         unique_items.append(scholarship)
     return unique_items
+
+
+def is_relevant_for_it(scholarship: ScholarshipPayload) -> bool:
+    haystack = " ".join(
+        [
+            scholarship.title,
+            scholarship.description,
+            scholarship.provider,
+            scholarship.country,
+            str(scholarship.url),
+            *scholarship.tags,
+        ]
+    ).lower()
+
+    if any(keyword in haystack for keyword in EXCLUDE_KEYWORDS):
+        return False
+
+    return any(keyword in haystack for keyword in INCLUDE_KEYWORDS)
+
+
+def classify_by_content(scholarship: ScholarshipPayload) -> str:
+    haystack = " ".join(
+        [
+            scholarship.title,
+            scholarship.description,
+            scholarship.provider,
+            scholarship.country,
+            str(scholarship.url),
+            *scholarship.tags,
+        ]
+    ).lower()
+
+    if any(keyword in haystack for keyword in BLACK_LIST):
+        return "REJECTED"
+
+    contains_whitelist = any(keyword in haystack for keyword in WHITE_LIST)
+    it_relevant = is_relevant_for_it(scholarship)
+
+    if contains_whitelist and it_relevant:
+        return "APPROVED"
+    if contains_whitelist or it_relevant:
+        # TODO: Enriquecer esta clasificacion con un modelo pequeno o regex avanzado para reducir falsos positivos.
+        return "REVIEW"
+    return "REJECTED"
+
+
+def classify_scholarships(scholarships: list[ScholarshipPayload]) -> list[ScholarshipPayload]:
+    approved = 0
+    review = 0
+    rejected = 0
+    classified: list[ScholarshipPayload] = []
+    for scholarship in scholarships:
+        status = classify_by_content(scholarship)
+        if status == "APPROVED":
+            approved += 1
+        elif status == "REVIEW":
+            review += 1
+        else:
+            rejected += 1
+        classified.append(scholarship.model_copy(update={"status": status}))
+
+    logger.info(
+        "Clasificacion aplicada: total=%s approved=%s review=%s rejected=%s (white=%s black=%s include=%s exclude=%s)",
+        len(scholarships),
+        approved,
+        review,
+        rejected,
+        len(WHITE_LIST),
+        len(BLACK_LIST),
+        len(INCLUDE_KEYWORDS),
+        len(EXCLUDE_KEYWORDS),
+    )
+    return classified
 
 
 def send_to_backend(final_api_url: str, scholarship: ScholarshipPayload) -> tuple[bool, str]:
@@ -221,6 +396,7 @@ def run_scraper() -> None:
             logger.error("%s: no se pudo ejecutar el scraper: %s", scraper.site_name, exc)
 
     scholarships = deduplicate_scholarships(scholarships)
+    scholarships = classify_scholarships(scholarships)
     logger.info("Total de becas validas tras deduplicar: %s", len(scholarships))
 
     inserted_count = 0

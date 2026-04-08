@@ -1,7 +1,24 @@
 from datetime import date, timedelta
+from typing import Literal
 
 from dateutil import parser as date_parser
 from pydantic import BaseModel, Field, HttpUrl, field_validator
+
+
+def _parse_deadline_text(raw_deadline: str) -> str:
+    if not raw_deadline:
+        return (date.today() + timedelta(days=365)).isoformat()
+
+    cleaned = raw_deadline.strip()
+    cleaned = cleaned.replace("\u00a0", " ")
+    cleaned = cleaned.replace("de estar", "")
+    cleaned = cleaned.replace("estar", "")
+
+    try:
+        parsed = date_parser.parse(cleaned, fuzzy=True, dayfirst=True).date()
+        return parsed.isoformat()
+    except (ValueError, OverflowError):
+        return (date.today() + timedelta(days=365)).isoformat()
 
 
 class ScholarshipPayload(BaseModel):
@@ -11,13 +28,15 @@ class ScholarshipPayload(BaseModel):
     country: str = Field(default="Global", max_length=100)
     deadline: str
     url: HttpUrl
+    status: Literal["PENDING", "APPROVED", "REVIEW", "REJECTED"] = "PENDING"
+    benefits: str = Field(default="", max_length=500)
+    logoUrl: HttpUrl | None = None
     tags: list[str] = Field(default_factory=list)
 
     @field_validator("deadline")
     @classmethod
     def validate_deadline_iso(cls, value: str) -> str:
-        parsed = date_parser.parse(value).date()
-        return parsed.isoformat()
+        return _parse_deadline_text(value)
 
     @field_validator("tags")
     @classmethod
@@ -31,6 +50,4 @@ class ScholarshipPayload(BaseModel):
 
 
 def normalize_deadline(raw_deadline: str) -> str:
-    if not raw_deadline:
-        return (date.today() + timedelta(days=365)).isoformat()
-    return date_parser.parse(raw_deadline).date().isoformat()
+    return _parse_deadline_text(raw_deadline)

@@ -4,6 +4,8 @@ import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -70,6 +72,22 @@ public class Scholarship {
     @Pattern(regexp = "^(https?://).+", message = "URL must start with http:// or https://")
     @Column(nullable = false, length = 500, unique = true)
     private String url;
+
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    @Builder.Default
+    private ScholarshipStatus status = ScholarshipStatus.PENDING;
+
+    @Size(max = 500)
+    @Column(length = 500)
+    @Builder.Default
+    private String benefits = "";
+
+    @Pattern(regexp = "^(https?://).+", message = "Logo URL must start with http:// or https://")
+    @Size(max = 500)
+    @Column(name = "logo_url", length = 500)
+    private String logoUrl;
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "scholarship_tags", joinColumns = @JoinColumn(name = "scholarship_id"))
