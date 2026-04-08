@@ -1,6 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 
-const API_BASE_URL = `${window.location.protocol}//${window.location.hostname}:8080/api/v1/scholarships`;
+const API_BASE_URL = (
+    import.meta.env.VITE_API_BASE_URL ||
+    `${window.location.protocol}//${window.location.hostname}:8080/api/v1/scholarships`
+).replace(/\/$/, '');
 const PAGE_SIZE = 6;
 
 function truncate(text, max = 140) {
