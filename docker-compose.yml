@@ -26,6 +26,11 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/scholarship_db
       SPRING_DATASOURCE_USERNAME: scholarship_user
@@ -43,12 +48,15 @@ services:
     restart: unless-stopped
     depends_on:
       app:
-        condition: service_started
+        condition: service_healthy
+    volumes:
+      - ./scraper/mocks:/app/mocks
     environment:
       API_URL: http://app:8080/api/v1/scholarships
       SCRAPER_INTERVAL_SECONDS: 900
       BACKEND_WAIT_SECONDS: 5
       REQUEST_TIMEOUT_SECONDS: 10
+      SCRAPER_SITES_JSON: '[{"kind":"alpha","name":"Progresar local","url":"file:///app/mocks/progresar.html","source_name":"Progresar","default_country":"Argentina","link_base_url":"https://www.argentina.gob.ar"},{"kind":"alpha","name":"Manuel local","url":"file:///app/mocks/manuel_belgrano.html","source_name":"Manuel Belgrano","default_country":"Argentina","link_base_url":"https://www.argentina.gob.ar"},{"kind":"beta","name":"OEA local","url":"file:///app/mocks/oea_list.html","source_name":"OEA","default_country":"Global","link_base_url":"https://www.oas.org"}]'
 
   frontend:
     build:
@@ -58,7 +66,7 @@ services:
     restart: unless-stopped
     depends_on:
       app:
-        condition: service_started
+        condition: service_healthy
     ports:
       - "8081:80"
 

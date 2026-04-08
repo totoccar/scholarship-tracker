@@ -5,7 +5,8 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+COPY models.py base.py scraper.py ./
+COPY adapters/ ./adapters/
 
 # El scraper no necesita EXPOSE porque él es quien "llama" a la API, nadie lo llama a él.
 CMD ["python", "scraper.py"]
