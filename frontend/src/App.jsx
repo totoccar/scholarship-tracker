@@ -116,7 +116,7 @@ export default function App() {
 
         return allItems.filter((item) => {
             const status = (item.status || 'APPROVED').toUpperCase();
-            if (status !== 'APPROVED') return false;
+            if (status !== 'APPROVED' && status !== 'REVIEW') return false;
 
             const itemCountry = item.country || 'Global';
             const matchesCountry = country ? itemCountry.toLowerCase() === country.toLowerCase() : true;

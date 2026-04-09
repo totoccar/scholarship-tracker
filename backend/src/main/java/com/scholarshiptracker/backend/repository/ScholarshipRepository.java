@@ -15,5 +15,7 @@ public interface ScholarshipRepository extends JpaRepository<Scholarship, Long> 
 
 	List<Scholarship> findByStatusOrStatusIsNullOrderByDeadlineAsc(ScholarshipStatus status);
 
+	List<Scholarship> findByStatusInOrStatusIsNullOrderByDeadlineAsc(List<ScholarshipStatus> statuses);
+
     Page<Scholarship> findByCountryContainingIgnoreCase(String country, Pageable pageable);
 }

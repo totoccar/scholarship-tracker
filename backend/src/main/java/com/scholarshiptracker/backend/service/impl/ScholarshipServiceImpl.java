@@ -4,6 +4,7 @@ import com.scholarshiptracker.backend.domain.entity.Scholarship;
 import com.scholarshiptracker.backend.domain.entity.ScholarshipStatus;
 import com.scholarshiptracker.backend.repository.ScholarshipRepository;
 import com.scholarshiptracker.backend.service.ScholarshipService;
+import java.util.Arrays;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -20,7 +21,9 @@ public class ScholarshipServiceImpl implements ScholarshipService {
 
     @Override
     public List<Scholarship> findAll() {
-        return scholarshipRepository.findByStatusOrStatusIsNullOrderByDeadlineAsc(ScholarshipStatus.APPROVED);
+        return scholarshipRepository.findByStatusInOrStatusIsNullOrderByDeadlineAsc(
+                Arrays.asList(ScholarshipStatus.APPROVED, ScholarshipStatus.REVIEW)
+        );
     }
 
     @Override
