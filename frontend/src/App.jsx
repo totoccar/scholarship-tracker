@@ -1,9 +1,21 @@
 import React, { useEffect, useMemo, useState } from 'react';
 
-const API_BASE_URL = (
-    import.meta.env.VITE_API_BASE_URL ||
-    `${window.location.protocol}//${window.location.hostname}:8080/api/v1/scholarships`
-).replace(/\/$/, '');
+function resolveApiBaseUrl(value) {
+    const fallbackPath = '/api/v1/scholarships';
+    const rawValue = (value || '').trim().replace(/\/$/, '');
+
+    if (!rawValue) {
+        return fallbackPath;
+    }
+
+    if (rawValue.includes(fallbackPath)) {
+        return rawValue;
+    }
+
+    return `${rawValue}${fallbackPath}`;
+}
+
+const API_BASE_URL = resolveApiBaseUrl(import.meta.env.VITE_API_BASE_URL);
 const PAGE_SIZE = 6;
 
 const ACADEMIC_LEVELS = {
