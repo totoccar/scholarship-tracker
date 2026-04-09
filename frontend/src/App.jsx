@@ -80,6 +80,21 @@ async function fetchWithRetry(url, attempts = 3, delayMs = 450) {
     throw lastError;
 }
 
+async function buildHttpError(response) {
+    const fallback = `Error HTTP ${response.status}`;
+
+    try {
+        const payload = await response.json();
+        if (payload && typeof payload.message === 'string' && payload.message.trim()) {
+            return new Error(`${fallback}: ${payload.message.trim()}`);
+        }
+    } catch {
+        // Ignore JSON parsing errors and keep fallback message.
+    }
+
+    return new Error(fallback);
+}
+
 export default function App() {
     const [allItems, setAllItems] = useState([]);
     const [country, setCountry] = useState('');
@@ -146,7 +161,7 @@ export default function App() {
         try {
             const response = await fetchWithRetry(API_BASE_URL);
             if (!response.ok) {
-                throw new Error(`Error HTTP ${response.status}`);
+                throw await buildHttpError(response);
             }
 
             const data = await response.json();
