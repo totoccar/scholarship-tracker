@@ -26,6 +26,8 @@ Tipos soportados:
 - `beta`: listados tipo `li`, `.card` o layouts alternativos.
 - `demo`: fallback local cuando no se configura ningun sitio.
 
+Si no se definen `SCRAPER_SITES_JSON` ni `SCRAPER_SOURCE_URL`, el scraper usa una lista por defecto de sitios reales. El modo `demo` solo se activa si se define `SCRAPER_ENABLE_DEMO_FALLBACK=true`.
+
 ## Google Dorking para encontrar fuentes
 
 Usa busquedas avanzadas para encontrar paginas faciles de procesar:

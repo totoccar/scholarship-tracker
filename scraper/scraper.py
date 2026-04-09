@@ -25,6 +25,11 @@ SCRAPER_INCLUDE_KEYWORDS = os.getenv("SCRAPER_INCLUDE_KEYWORDS", "")
 SCRAPER_EXCLUDE_KEYWORDS = os.getenv("SCRAPER_EXCLUDE_KEYWORDS", "")
 SCRAPER_WHITE_LIST = os.getenv("SCRAPER_WHITE_LIST", "")
 SCRAPER_BLACK_LIST = os.getenv("SCRAPER_BLACK_LIST", "")
+SCRAPER_ENABLE_DEMO_FALLBACK = os.getenv("SCRAPER_ENABLE_DEMO_FALLBACK", "false").strip().lower() in {
+    "1",
+    "true",
+    "yes",
+}
 
 REQUEST_TIMEOUT_SECONDS = int(os.getenv("REQUEST_TIMEOUT_SECONDS", "40"))
 BACKEND_WAIT_SECONDS = int(os.getenv("BACKEND_WAIT_SECONDS", "20"))
@@ -97,6 +102,74 @@ DEFAULT_BLACK_LIST = [
     "requisitos",
     "contacto",
     "noticia",
+]
+
+DEFAULT_SITE_SPECS = [
+    {
+        "kind": "alpha",
+        "name": "Fundacion Carolina Postgrado",
+        "url": "https://www.fundacioncarolina.es/formacion/postgrado/",
+        "source_name": "Fundacion Carolina",
+        "default_country": "Spain",
+        "link_base_url": "https://www.fundacioncarolina.es",
+        "selector_item": "article.opportunity, article.scholarship-card",
+    },
+    {
+        "kind": "alpha",
+        "name": "AUIP Becas",
+        "url": "https://auip.org/es/becas-auip",
+        "source_name": "AUIP",
+        "default_country": "Spain",
+        "link_base_url": "https://auip.org",
+    },
+    {
+        "kind": "alpha",
+        "name": "UPM ETSI Informatica",
+        "url": "https://www.fi.upm.es/",
+        "source_name": "UPM ETSI Informatica",
+        "default_country": "Spain",
+        "link_base_url": "https://www.fi.upm.es",
+    },
+    {
+        "kind": "alpha",
+        "name": "UPC FIB",
+        "url": "https://www.fib.upc.edu/es",
+        "source_name": "UPC FIB",
+        "default_country": "Spain",
+        "link_base_url": "https://www.fib.upc.edu",
+    },
+    {
+        "kind": "alpha",
+        "name": "UPV ETSINF",
+        "url": "https://www.upv.es/entidades/etsinf/",
+        "source_name": "UPV ETSINF",
+        "default_country": "Spain",
+        "link_base_url": "https://www.upv.es",
+    },
+    {
+        "kind": "alpha",
+        "name": "BSC Summer Internships",
+        "url": "https://www.bsc.es/join-us/excellence-career-opportunities/bsc-international-summer-hpc-internship-programme",
+        "source_name": "Barcelona Supercomputing Center",
+        "default_country": "Spain",
+        "link_base_url": "https://www.bsc.es",
+    },
+    {
+        "kind": "alpha",
+        "name": "IMDEA Software Estudiantes",
+        "url": "https://software.imdea.org/students/",
+        "source_name": "IMDEA Software",
+        "default_country": "Spain",
+        "link_base_url": "https://software.imdea.org",
+    },
+    {
+        "kind": "beta",
+        "name": "Santander Open Academy",
+        "url": "https://app.santanderopenacademy.com/es/",
+        "source_name": "Santander Open Academy",
+        "default_country": "Spain",
+        "link_base_url": "https://app.santanderopenacademy.com",
+    },
 ]
 
 
@@ -229,7 +302,40 @@ def parse_site_specs() -> list[ScraperSpec]:
             )
         )
 
-    if not specs:
+        return specs
+
+    if DEFAULT_SITE_SPECS:
+        specs = []
+        for item in DEFAULT_SITE_SPECS:
+            kind = str(item.get("kind") or "alpha").strip().lower()
+            name = str(item.get("name") or "site").strip()
+            url = item.get("url")
+            source_name = item.get("source_name")
+            default_country = str(item.get("default_country") or "Global").strip() or "Global"
+            link_base_url = item.get("link_base_url")
+            selector_overrides: dict[str, str] = {}
+
+            for key in ("item", "title", "description", "provider", "country", "deadline", "tags", "link"):
+                raw_key = f"selector_{key}"
+                value = item.get(raw_key)
+                if value:
+                    selector_overrides[key] = str(value).strip()
+
+            specs.append(
+                ScraperSpec(
+                    kind=kind,
+                    name=name,
+                    url=str(url).strip() if url else None,
+                    source_name=str(source_name).strip() if source_name else None,
+                    default_country=default_country,
+                    link_base_url=str(link_base_url).strip() if link_base_url else None,
+                    selector_overrides=selector_overrides or None,
+                )
+            )
+
+        return specs
+
+    if not specs and SCRAPER_ENABLE_DEMO_FALLBACK:
         specs.append(ScraperSpec(kind="demo", name="demo"))
 
     return specs

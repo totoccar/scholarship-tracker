@@ -12,6 +12,18 @@ from models import ScholarshipPayload
 
 logger = logging.getLogger(__name__)
 
+REQUEST_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+    ),
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "es-ES,es;q=0.9,en;q=0.8",
+    "Cache-Control": "no-cache",
+    "Pragma": "no-cache",
+    "Upgrade-Insecure-Requests": "1",
+}
+
 TITLE_BLACKLIST = (
     "bases",
     "procedimiento",
@@ -79,12 +91,17 @@ class BaseScraper(ABC):
                 return local_path.read_text(encoding="utf-8")
 
         try:
-            response = requests.get(target_url, timeout=self.request_timeout_seconds)
+            response = requests.get(target_url, timeout=self.request_timeout_seconds, headers=REQUEST_HEADERS)
         except requests.exceptions.SSLError:
             host = (urlparse(target_url).hostname or "").lower()
             if host.endswith("auip.org"):
                 logger.warning("%s: SSL invalido en %s; reintentando con verify=False", self.site_name, host)
-                response = requests.get(target_url, timeout=self.request_timeout_seconds, verify=False)
+                response = requests.get(
+                    target_url,
+                    timeout=self.request_timeout_seconds,
+                    verify=False,
+                    headers=REQUEST_HEADERS,
+                )
             else:
                 raise
 
