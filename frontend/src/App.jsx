@@ -65,6 +65,28 @@ function truncate(text, max = 140) {
     return text.length > max ? `${text.slice(0, max)}...` : text;
 }
 
+function extractHost(rawUrl) {
+    const value = (rawUrl || '').trim();
+    if (!value) return '';
+
+    try {
+        const normalized = /^https?:\/\//i.test(value) ? value : `https://${value.replace(/^\/\//, '')}`;
+        const host = new URL(normalized).hostname.toLowerCase();
+        return host.startsWith('www.') ? host.slice(4) : host;
+    } catch {
+        return '';
+    }
+}
+
+function resolveLogoUrl(item) {
+    const hostFromScholarship = extractHost(item?.url);
+    const hostFromLogo = extractHost(item?.logoUrl);
+    const host = hostFromScholarship || hostFromLogo;
+
+    if (!host) return '';
+    return `https://www.google.com/s2/favicons?sz=64&domain=${encodeURIComponent(host)}`;
+}
+
 async function fetchWithRetry(url, attempts = 3, delayMs = 450) {
     let lastError;
     for (let i = 0; i < attempts; i += 1) {
@@ -218,6 +240,10 @@ export default function App() {
         setPage((current) => current - 1);
     };
 
+    const onLogoLoadError = (event) => {
+        event.currentTarget.style.display = 'none';
+    };
+
     const onNext = () => {
         if (page >= totalPages - 1) return;
         setPage((current) => current + 1);
@@ -287,14 +313,15 @@ export default function App() {
             <section className="grid">
                 {pagedItems.map((scholarship) => (
                     <article className="card" key={scholarship.id ?? scholarship.url}>
-                        {scholarship.logoUrl && (
+                        {resolveLogoUrl(scholarship) && (
                             <img
-                                src={scholarship.logoUrl}
+                                src={resolveLogoUrl(scholarship)}
                                 alt={`Logo de ${scholarship.provider || 'proveedor'}`}
                                 width="36"
                                 height="36"
                                 style={{ borderRadius: '8px', objectFit: 'contain', marginBottom: '8px' }}
                                 loading="lazy"
+                                onError={onLogoLoadError}
                             />
                         )}
                         <p className="provider">{scholarship.provider || 'Proveedor'}</p>

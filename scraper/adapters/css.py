@@ -160,7 +160,7 @@ class CssScholarshipScraper(BaseScraper):
             return None
         if host.startswith("www."):
             host = host[4:]
-        return f"https://logo.clearbit.com/{host}"
+        return f"https://www.google.com/s2/favicons?sz=64&domain={host}"
 
     def _deep_enrich_description(self, target_url: str, fallback_description: str) -> str:
         try:
