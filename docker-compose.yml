@@ -26,10 +26,16 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/scholarship_db
       SPRING_DATASOURCE_USERNAME: scholarship_user
       SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+      DB_SSL_MODE: disable
       SERVER_PORT: 8080
     ports:
       - "8080:8080"
@@ -42,12 +48,19 @@ services:
     restart: unless-stopped
     depends_on:
       app:
-        condition: service_started
+        condition: service_healthy
+    volumes:
+      - ./scraper/mocks:/app/mocks
     environment:
       API_URL: http://app:8080/api/v1/scholarships
       SCRAPER_INTERVAL_SECONDS: 900
       BACKEND_WAIT_SECONDS: 5
       REQUEST_TIMEOUT_SECONDS: 10
+      SCRAPER_SITES_JSON: '[{"kind":"alpha","name":"Fundacion Carolina Postgrado","url":"https://www.fundacioncarolina.es/formacion/postgrado/","source_name":"Fundacion Carolina","default_country":"Spain","link_base_url":"https://www.fundacioncarolina.es","selector_item":"article.opportunity, article.scholarship-card"},{"kind":"alpha","name":"AUIP Becas","url":"https://auip.org/es/becas-auip","source_name":"AUIP","default_country":"Spain","link_base_url":"https://auip.org"},{"kind":"alpha","name":"UPM ETSI Informatica","url":"https://www.fi.upm.es/","source_name":"UPM ETSI Informatica","default_country":"Spain","link_base_url":"https://www.fi.upm.es"},{"kind":"alpha","name":"UPC FIB","url":"https://www.fib.upc.edu/es","source_name":"UPC FIB","default_country":"Spain","link_base_url":"https://www.fib.upc.edu"},{"kind":"alpha","name":"UPV ETSINF","url":"https://www.upv.es/entidades/etsinf/","source_name":"UPV ETSINF","default_country":"Spain","link_base_url":"https://www.upv.es"},{"kind":"alpha","name":"BSC Summer Internships","url":"https://www.bsc.es/join-us/excellence-career-opportunities/bsc-international-summer-hpc-internship-programme","source_name":"Barcelona Supercomputing Center","default_country":"Spain","link_base_url":"https://www.bsc.es"},{"kind":"alpha","name":"IMDEA Software Estudiantes","url":"https://software.imdea.org/students/","source_name":"IMDEA Software","default_country":"Spain","link_base_url":"https://software.imdea.org"},{"kind":"beta","name":"Santander Open Academy","url":"https://app.santanderopenacademy.com/es/","source_name":"Santander Open Academy","default_country":"Spain","link_base_url":"https://app.santanderopenacademy.com"}]'
+      SCRAPER_INCLUDE_KEYWORDS: 'it,informatica,informática,sistemas,software,computer science,computing,ingenieria informatica,ingeniería informática,data science,ciencia de datos,machine learning,inteligencia artificial,ia,cloud,devops,ciberseguridad,cybersecurity,hpc,high performance computing,supercomput,master,masters,maestria,maestría,postgrado,posgrado'
+      SCRAPER_EXCLUDE_KEYWORDS: 'abogacia,abogacía,derecho,medicina,enfermeria,enfermería,odontologia,odontología,farmacia,psicologia,psicología,nutricion,nutrición,veterinaria'
+      SCRAPER_WHITE_LIST: 'beca,convocatoria,master,máster,postgrado,pasantia,pasantía,internship'
+      SCRAPER_BLACK_LIST: 'tramites,trámites,preguntas frecuentes,guia,guía,requisitos,contacto,noticia'
 
   frontend:
     build:
@@ -57,7 +70,7 @@ services:
     restart: unless-stopped
     depends_on:
       app:
-        condition: service_started
+        condition: service_healthy
     ports:
       - "8081:80"
 

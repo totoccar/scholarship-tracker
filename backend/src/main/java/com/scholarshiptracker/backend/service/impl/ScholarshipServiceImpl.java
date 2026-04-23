@@ -1,10 +1,15 @@
 package com.scholarshiptracker.backend.service.impl;
 
 import com.scholarshiptracker.backend.domain.entity.Scholarship;
+import com.scholarshiptracker.backend.domain.entity.ScholarshipStatus;
 import com.scholarshiptracker.backend.repository.ScholarshipRepository;
 import com.scholarshiptracker.backend.service.ScholarshipService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -15,7 +20,16 @@ public class ScholarshipServiceImpl implements ScholarshipService {
 
     @Override
     public List<Scholarship> findAll() {
-        return scholarshipRepository.findAll();
+        return scholarshipRepository.findByStatusOrStatusIsNullOrderByDeadlineAsc(ScholarshipStatus.APPROVED);
+    }
+
+    @Override
+    public Page<Scholarship> searchByCountry(String country, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("deadline").ascending());
+        if (country == null || country.isBlank()) {
+            return scholarshipRepository.findAll(pageable);
+        }
+        return scholarshipRepository.findByCountryContainingIgnoreCase(country.trim(), pageable);
     }
 
     @Override
@@ -33,6 +47,13 @@ public class ScholarshipServiceImpl implements ScholarshipService {
 
         scholarship.setId(null);
         scholarship.setUrl(normalizedUrl);
+        scholarship.setCountry(normalizeCountry(scholarship.getCountry()));
+        if (scholarship.getStatus() == null) {
+            scholarship.setStatus(ScholarshipStatus.PENDING);
+        }
+        if (scholarship.getBenefits() == null) {
+            scholarship.setBenefits("");
+        }
         return scholarshipRepository.save(scholarship);
     }
 
@@ -47,8 +68,12 @@ public class ScholarshipServiceImpl implements ScholarshipService {
         existing.setTitle(scholarship.getTitle());
         existing.setDescription(scholarship.getDescription());
         existing.setProvider(scholarship.getProvider());
+        existing.setCountry(normalizeCountry(scholarship.getCountry()));
         existing.setDeadline(scholarship.getDeadline());
         existing.setUrl(normalizedUrl);
+        existing.setStatus(scholarship.getStatus() == null ? ScholarshipStatus.PENDING : scholarship.getStatus());
+        existing.setBenefits(scholarship.getBenefits() == null ? "" : scholarship.getBenefits());
+        existing.setLogoUrl(scholarship.getLogoUrl());
         existing.setTags(scholarship.getTags());
         return scholarshipRepository.save(existing);
     }
@@ -64,5 +89,12 @@ public class ScholarshipServiceImpl implements ScholarshipService {
             return null;
         }
         return url.trim();
+    }
+
+    private String normalizeCountry(String country) {
+        if (country == null || country.isBlank()) {
+            return "Global";
+        }
+        return country.trim();
     }
 }
